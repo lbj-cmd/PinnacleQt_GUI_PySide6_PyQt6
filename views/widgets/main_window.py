@@ -7,9 +7,9 @@
 import sys
 from typing import (Tuple, Union)
 
-from PySide6.QtCore import (Qt, QTimer, QEvent, QPoint, QPropertyAnimation, QParallelAnimationGroup)
-from PySide6.QtGui import QIcon
-from PySide6.QtWidgets import (QMainWindow, QApplication, QSizeGrip, QPushButton)
+from PySide6.QtCore import (Qt, QTimer, QEvent, QPoint, QRect, QPropertyAnimation, QParallelAnimationGroup, QCoreApplication, QSize)
+from PySide6.QtGui import (QIcon, QCursor)
+from PySide6.QtWidgets import (QMainWindow, QApplication, QSizeGrip, QPushButton, QSizePolicy, QWidget, QTextEdit, QLabel)
 
 from config import (DarkConfig, LightConfig)
 from views.ui_components import (create_width_animation, create_animation_group, apply_shadow_effect)
@@ -37,23 +37,24 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.current_selected_btn: str = 'btn_home'
         self.config = DarkConfig
         #
+        self.timer = QTimer()
+        self.initialize_new_panels()
         self.initialize_view()
         self.setup_connections()
 
     # noinspection PyTypeChecker
     def set_theme(self):
-        """
-        在应用程序中切换浅色和深色主题。
-        此方法清除当前样式，应用全局主题样式，
-        并根据所选主题调整特定小部件的样式。
-        """
+        """在应用程序中切换浅色和深色主题。
+        此方法清除当前样式，应用全局主题样式，并根据所选主题调整特定小部件的样式。"""
         # 清空显性的样式，两个设置按钮 和 菜单选中的按钮
         self.toggle_setting_btn_style()
         self.toggle_selected_btn_style(is_add=False)
 
-        #
+        # 切换主题
         self.config = LightConfig if self.dark_theme else DarkConfig
         self.dark_theme = not self.dark_theme
+        theme_name = "浅色" if self.dark_theme else "深色"
+        
         # 设置全局的新样式，新主题
         with open(self.config.QSS_FILE, mode='r', encoding='utf-8') as f:
             self.styleSheet.setStyleSheet(f.read())
@@ -64,11 +65,19 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         # 设置当前选中的按钮的颜色
         btn: QPushButton = self.findChild(QPushButton, self.current_selected_btn)
-        self.stackedWidget.setCurrentWidget(btn)
         self.toggle_selected_btn_style(btn)
 
         # 添加两个设置按钮的颜色，如果有展开的话
         self.toggle_setting_btn_style(add_default_style=True)
+        
+        # 记录主题切换日志
+        import logging
+        logging.info(f"主题已切换为 {theme_name} 主题")
+
+        # 添加主题切换日志
+        import logging
+        theme_name = "浅色" if self.dark_theme else "深色"
+        logging.info(f"主题切换为: {theme_name}主题")
 
     def initialize_view(self):
         """初始化视图"""
@@ -83,6 +92,70 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.setWindowFlag(Qt.FramelessWindowHint)
         # 半透明
         self.setAttribute(Qt.WA_TranslucentBackground)
+
+    def initialize_new_panels(self):
+        """初始化新面板"""
+        # 添加日志查看器按钮
+        self.btn_logs = QPushButton(self.topMenu)
+        self.btn_logs.setObjectName("btn_logs")
+        sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        sizePolicy.setHeightForWidth(self.btn_logs.sizePolicy().hasHeightForWidth())
+        self.btn_logs.setSizePolicy(sizePolicy)
+        self.btn_logs.setMinimumSize(QSize(0, 45))
+        self.btn_logs.setCursor(QCursor(Qt.PointingHandCursor))
+        self.btn_logs.setLayoutDirection(Qt.LeftToRight)
+        self.btn_logs.setStyleSheet(u"background-image: url(:/icons/icons/cil-notes.png);")
+        self.btn_logs.setText(QCoreApplication.translate("MainWindow", u"Logs", None))
+        self.verticalLayout_8.addWidget(self.btn_logs)
+
+        # 添加系统监控按钮
+        self.btn_monitor = QPushButton(self.topMenu)
+        self.btn_monitor.setObjectName("btn_monitor")
+        sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        sizePolicy.setHeightForWidth(self.btn_monitor.sizePolicy().hasHeightForWidth())
+        self.btn_monitor.setSizePolicy(sizePolicy)
+        self.btn_monitor.setMinimumSize(QSize(0, 45))
+        self.btn_monitor.setCursor(QCursor(Qt.PointingHandCursor))
+        self.btn_monitor.setLayoutDirection(Qt.LeftToRight)
+        self.btn_monitor.setStyleSheet(u"background-image: url(:/icons/icons/cil-chart.png);")
+        self.btn_monitor.setText(QCoreApplication.translate("MainWindow", u"Monitor", None))
+        self.verticalLayout_8.addWidget(self.btn_monitor)
+
+        # 添加日志查看器页面
+        self.logs_page = QWidget()
+        self.logs_page.setObjectName("logs_page")
+        self.text_edit_logs = QTextEdit(self.logs_page)
+        self.text_edit_logs.setGeometry(QRect(10, 10, 800, 600))
+        self.text_edit_logs.setStyleSheet("background-color: #1e1e1e; color: #cccccc;")
+        self.stackedWidget.addWidget(self.logs_page)
+
+        # 添加系统监控页面
+        self.monitor_page = QWidget()
+        self.monitor_page.setObjectName("monitor_page")
+        self.label_cpu = QLabel(self.monitor_page)
+        self.label_cpu.setGeometry(QRect(10, 10, 200, 30))
+        self.label_cpu.setStyleSheet("font-size: 16px;")
+        self.label_memory = QLabel(self.monitor_page)
+        self.label_memory.setGeometry(QRect(10, 50, 200, 30))
+        self.label_memory.setStyleSheet("font-size: 16px;")
+        self.stackedWidget.addWidget(self.monitor_page)
+
+        # 设置日志捕获器
+        import logging
+        # 创建日志捕获器
+        self.log_handler = logging.StreamHandler(self)
+        self.log_handler.setLevel(logging.INFO)
+        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+        self.log_handler.setFormatter(formatter)
+        # 移除所有已存在的处理器
+        for handler in logging.getLogger('').handlers[:]:
+            logging.getLogger('').removeHandler(handler)
+        # 添加我们的日志捕获器
+        logging.getLogger('').addHandler(self.log_handler)
+        # 设置root logger的级别为INFO
+        logging.getLogger('').setLevel(logging.INFO)
+        # 测试日志
+        logging.info("日志查看器已初始化")
 
     def setup_connections(self):
         """事件绑定"""
@@ -101,12 +174,18 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.btn_widgets.clicked.connect(self.switch_page)
         self.btn_new.clicked.connect(self.switch_page)
         self.btn_save.clicked.connect(self.switch_page)
+        self.btn_logs.clicked.connect(self.switch_page)
+        self.btn_monitor.clicked.connect(self.switch_page)
         self.toggleTheme.clicked.connect(self.set_theme)
 
         # 最大最小化点击事件
         self.minimizeAppBtn.clicked.connect(self.showMinimized)
         self.maximizeRestoreAppBtn.clicked.connect(self.maximize_restore)
         self.closeAppBtn.clicked.connect(self.close)
+
+        # 系统监控定时器
+        self.timer.timeout.connect(self.update_system_info)
+        self.timer.start(2000)
 
     def initialize_title(self):
         """设置title"""
@@ -257,19 +336,24 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.animation_group.start()
 
     def switch_page(self):
-        """切换页面"""
+        """
+        切换页面
+        """
         page_map = {
-            'btn_home': self.home,
-            'btn_widgets': self.widgets,
-            'btn_new': self.new_page,
+            'btn_home': 0,
+            'btn_widgets': 1,
+            'btn_new': 2,
+            'btn_logs': 3,
+            'btn_monitor': 4,
         }
         selected_btn = self.sender()
         selected_btn_name: str = selected_btn.objectName()
-        if page := page_map.get(selected_btn_name):
-            if page == self.stackedWidget.currentWidget():
+        if selected_btn_name in page_map:
+            index = page_map[selected_btn_name]
+            if index == self.stackedWidget.currentIndex():
                 return
             # 切换页面
-            QTimer.singleShot(150, lambda: self.stackedWidget.setCurrentWidget(page))
+            QTimer.singleShot(150, lambda: self.stackedWidget.setCurrentIndex(index))
             # 设置未被选中按钮样式
             self.toggle_selected_btn_style(is_add=False)
             # 设置选中的按钮样式
@@ -277,6 +361,29 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             # 记录当前选中的按钮
             self.current_selected_btn = selected_btn_name
         print(f'Button "{selected_btn_name}" pressed!')
+
+    def update_system_info(self):
+        """更新系统信息"""
+        import psutil
+        cpu_percent = psutil.cpu_percent()
+        memory = psutil.virtual_memory()
+        memory_percent = memory.percent
+        self.label_cpu.setText(f"CPU 使用率: {cpu_percent}%")
+        self.label_memory.setText(f"内存 使用率: {memory_percent}%")
+
+    def emit(self, record):
+        """日志捕获器的emit方法"""
+        log_entry = self.log_handler.formatter.format(record)
+        self.text_edit_logs.append(log_entry)
+
+    def write(self, message):
+        """日志捕获器的write方法"""
+        if message.strip():
+            self.text_edit_logs.append(message.strip())
+
+    def flush(self):
+        """日志捕获器的flush方法"""
+        pass
 
     def double_click_maximize_restore(self, event):
         """双击标题控件事件"""
