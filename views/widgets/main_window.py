@@ -113,7 +113,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.btn_logs.setMinimumSize(QSize(0, 45))
         self.btn_logs.setCursor(QCursor(Qt.PointingHandCursor))
         self.btn_logs.setLayoutDirection(Qt.LeftToRight)
-        self.btn_logs.setStyleSheet(u"background-image: url(:/icons/icons/cil-notes.png); background-repeat: no-repeat; background-position: left center; padding-left: 30px;")
+        self.btn_logs.setStyleSheet(u"background-image: url(:/icons/icons/cil-notes.png); background-repeat: no-repeat; background-position: left center; padding-left: 30px; text-align: left;")
         self.btn_logs.setText(QCoreApplication.translate("MainWindow", u"Logs", None))
         self.verticalLayout_8.addWidget(self.btn_logs)
 
@@ -126,7 +126,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.btn_monitor.setMinimumSize(QSize(0, 45))
         self.btn_monitor.setCursor(QCursor(Qt.PointingHandCursor))
         self.btn_monitor.setLayoutDirection(Qt.LeftToRight)
-        self.btn_monitor.setStyleSheet(u"background-image: url(:/icons/icons/cil-chart.png); background-repeat: no-repeat; background-position: left center; padding-left: 30px;")
+        self.btn_monitor.setStyleSheet(u"background-image: url(:/icons/icons/cil-chart.png); background-repeat: no-repeat; background-position: left center; padding-left: 30px; text-align: left;")
         self.btn_monitor.setText(QCoreApplication.translate("MainWindow", u"Monitor", None))
         self.verticalLayout_8.addWidget(self.btn_monitor)
 
@@ -139,7 +139,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.btn_api.setMinimumSize(QSize(0, 45))
         self.btn_api.setCursor(QCursor(Qt.PointingHandCursor))
         self.btn_api.setLayoutDirection(Qt.LeftToRight)
-        self.btn_api.setStyleSheet(u"background-image: url(:/icons/icons/cil-link.png); background-repeat: no-repeat; background-position: left center; padding-left: 30px;")
+        self.btn_api.setStyleSheet(u"background-image: url(:/icons/icons/cil-link.png); background-repeat: no-repeat; background-position: left center; padding-left: 30px; text-align: left;")
         self.btn_api.setText(QCoreApplication.translate("MainWindow", u"API 测试器", None))
         self.verticalLayout_8.addWidget(self.btn_api)
 
@@ -152,7 +152,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.btn_markdown.setMinimumSize(QSize(0, 45))
         self.btn_markdown.setCursor(QCursor(Qt.PointingHandCursor))
         self.btn_markdown.setLayoutDirection(Qt.LeftToRight)
-        self.btn_markdown.setStyleSheet(u"background-image: url(:/icons/icons/cil-notes.png); background-repeat: no-repeat; background-position: left center; padding-left: 30px;")
+        self.btn_markdown.setStyleSheet(u"background-image: url(:/icons/icons/cil-notes.png); background-repeat: no-repeat; background-position: left center; padding-left: 30px; text-align: left;")
         self.btn_markdown.setText(QCoreApplication.translate("MainWindow", u"Markdown 编辑器", None))
         self.verticalLayout_8.addWidget(self.btn_markdown)
 
@@ -165,9 +165,22 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.btn_s_params.setMinimumSize(QSize(0, 45))
         self.btn_s_params.setCursor(QCursor(Qt.PointingHandCursor))
         self.btn_s_params.setLayoutDirection(Qt.LeftToRight)
-        self.btn_s_params.setStyleSheet(u"background-image: url(:/icons/icons/cil-chart-line.png); background-repeat: no-repeat; background-position: left center; padding-left: 30px;")
+        self.btn_s_params.setStyleSheet(u"background-image: url(:/icons/icons/cil-chart-line.png); background-repeat: no-repeat; background-position: left center; padding-left: 30px; text-align: left;")
         self.btn_s_params.setText(QCoreApplication.translate("MainWindow", u"S参数查看器", None))
         self.verticalLayout_8.addWidget(self.btn_s_params)
+
+        # 添加史密斯圆图按钮
+        self.btn_smith_chart = QPushButton(self.topMenu)
+        self.btn_smith_chart.setObjectName("btn_smith_chart")
+        sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        sizePolicy.setHeightForWidth(self.btn_smith_chart.sizePolicy().hasHeightForWidth())
+        self.btn_smith_chart.setSizePolicy(sizePolicy)
+        self.btn_smith_chart.setMinimumSize(QSize(0, 45))
+        self.btn_smith_chart.setCursor(QCursor(Qt.PointingHandCursor))
+        self.btn_smith_chart.setLayoutDirection(Qt.LeftToRight)
+        self.btn_smith_chart.setStyleSheet(u"background-image: url(:/icons/icons/cil-chart-pie.png); background-repeat: no-repeat; background-position: left center; padding-left: 30px; text-align: left;")
+        self.btn_smith_chart.setText(QCoreApplication.translate("MainWindow", u"史密斯圆图", None))
+        self.verticalLayout_8.addWidget(self.btn_smith_chart)
 
         # 添加日志查看器页面
         self.logs_page = QWidget()
@@ -273,18 +286,40 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.s_params_page = SParameterViewer(self.stackedWidget)
         self.stackedWidget.addWidget(self.s_params_page)
 
+        # 创建史密斯圆图面板
+        from views.widgets.smith_chart import SmithChartViewer
+        self.smith_chart_page = SmithChartViewer(self.stackedWidget)
+        self.stackedWidget.addWidget(self.smith_chart_page)
+
         # 保存按钮的原始文本
         self.button_texts = {
             self.btn_home: self.btn_home.text(),
             self.btn_widgets: self.btn_widgets.text(),
             self.btn_new: self.btn_new.text(),
             self.btn_save: self.btn_save.text(),
+            self.btn_exit: self.btn_exit.text(),
             self.btn_logs: self.btn_logs.text(),
             self.btn_monitor: self.btn_monitor.text(),
             self.btn_api: self.btn_api.text(),
             self.btn_markdown: self.btn_markdown.text(),
-            self.btn_s_params: self.btn_s_params.text()
+            self.btn_s_params: self.btn_s_params.text(),
+            self.btn_smith_chart: self.btn_smith_chart.text()
         }
+        # 统一设置所有按钮的样式为左对齐并添加图标间距
+        for button in [self.btn_home, self.btn_widgets, self.btn_new, self.btn_save, self.btn_exit, self.btn_logs, self.btn_monitor, self.btn_api, self.btn_markdown, self.btn_s_params, self.btn_smith_chart]:
+            # 完整设置按钮样式，确保所有属性一致
+            original_stylesheet = button.styleSheet()
+            # 提取原有的background-image属性
+            if "background-image: " in original_stylesheet:
+                bg_image = original_stylesheet.split("background-image: ")[-1].split(";")[0]
+            else:
+                bg_image = ""
+            # 设置完整样式
+            button.setStyleSheet(u"background-image: " + bg_image + "; background-repeat: no-repeat; background-position: left center; padding-left: 30px; text-align: left;")
+        
+        # 初始状态下隐藏按钮文本（菜单收起时）
+        for button in self.button_texts.keys():
+            button.setText("")
 
         # 设置日志捕获器
         import logging
@@ -325,6 +360,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.btn_api.clicked.connect(self.switch_page)
         self.btn_markdown.clicked.connect(self.switch_page)
         self.btn_s_params.clicked.connect(self.switch_page)
+        self.btn_smith_chart.clicked.connect(self.switch_page)
         self.toggleTheme.clicked.connect(self.set_theme)
 
         # 最大最小化点击事件
@@ -394,14 +430,19 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         # 隐藏或显示按钮文本
         hide_text = target_width == 60  # 如果目标宽度是60（收起状态），则隐藏文本
-        
-        # 设置按钮文本可见性
+
+        # 立即更新文本，避免动画过程中文字显示异常
         for button, text in self.button_texts.items():
             button.setText("" if hide_text else text)
 
         # ANIMATION
         self.animation = create_width_animation(self.leftMenuBg, target_width)
         self.animation.start()
+
+    def update_button_text(self, hide_text):
+        """更新按钮文本可见性"""
+        for button, text in self.button_texts.items():
+            button.setText("" if hide_text else text)
 
     # noinspection PyTypeChecker
     def toggle_selected_btn_style(self, widget=None, is_add=True):
@@ -506,6 +547,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             'btn_api': 5,
             'btn_markdown': 6,
             'btn_s_params': 7,
+            'btn_smith_chart': 8,
         }
         selected_btn = self.sender()
         selected_btn_name: str = selected_btn.objectName()

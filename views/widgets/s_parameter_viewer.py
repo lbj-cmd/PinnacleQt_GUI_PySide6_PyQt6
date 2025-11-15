@@ -45,6 +45,39 @@ class SParameterViewer(QWidget):
         # 参数选择下拉框
         self.param_combo = QComboBox()
         self.param_combo.addItems(["S11", "S12", "S21", "S22"])
+        # 设置下拉框宽度自动调整
+        self.param_combo.setSizeAdjustPolicy(QComboBox.AdjustToContents)
+        # 设置属性以解决文字重影问题
+        # 设置白色框黑体样式
+        self.param_combo.setStyleSheet('''QComboBox {
+            background-color: white;
+            color: black;
+            border: 1px solid #ccc;
+            padding: 5px;
+            font-size: 12px;
+            font-family: "Microsoft YaHei", SimHei, sans-serif;
+            font-weight: bold;
+            outline: none;
+            min-width: 100px;
+        }
+        QComboBox::drop-down {
+            subcontrol-origin: padding;
+            subcontrol-position: top right;
+            width: 25px;
+            border-left: 1px solid #ccc;
+        }
+        QComboBox::down-arrow {
+            image: url(:/icons/cil-caret-bottom.png);
+        }
+        QComboBox QAbstractItemView {
+            background-color: white;
+            color: black;
+            border: 1px solid #ccc;
+            selection-background-color: #e0e0e0;
+            font-size: 12px;
+            font-family: "Microsoft YaHei", SimHei, sans-serif;
+            font-weight: bold;
+        }''')
         control_layout.addWidget(self.param_combo)
 
         # 信息标签
