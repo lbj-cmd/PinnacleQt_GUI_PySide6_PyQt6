@@ -7,9 +7,15 @@
 import sys
 from typing import (Tuple, Union)
 
-from PySide6.QtCore import (Qt, QTimer, QEvent, QPoint, QPropertyAnimation, QParallelAnimationGroup)
-from PySide6.QtGui import QIcon
-from PySide6.QtWidgets import (QMainWindow, QApplication, QSizeGrip, QPushButton)
+from PySide6.QtCore import (Qt, QTimer, QEvent, QPoint, QRect, QPropertyAnimation, QParallelAnimationGroup, QCoreApplication, QSize)
+from PySide6.QtGui import (QIcon, QCursor)
+from PySide6.QtWidgets import (QMainWindow, QApplication, QSizeGrip, QPushButton, QSizePolicy, QWidget, QTextEdit, QLabel, QSplitter, QVBoxLayout, QHBoxLayout)
+
+# 延迟导入markdown
+try:
+    from markdown import markdown
+except ImportError:
+    markdown = None
 
 from config import (DarkConfig, LightConfig)
 from views.ui_components import (create_width_animation, create_animation_group, apply_shadow_effect)
@@ -36,24 +42,27 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.dark_theme: bool = bool(1)
         self.current_selected_btn: str = 'btn_home'
         self.config = DarkConfig
+        # 保存按钮的原始文本
+        self.button_texts = {}
         #
+        self.timer = QTimer()
+        self.initialize_new_panels()
         self.initialize_view()
         self.setup_connections()
 
     # noinspection PyTypeChecker
     def set_theme(self):
-        """
-        在应用程序中切换浅色和深色主题。
-        此方法清除当前样式，应用全局主题样式，
-        并根据所选主题调整特定小部件的样式。
-        """
+        """在应用程序中切换浅色和深色主题。
+        此方法清除当前样式，应用全局主题样式，并根据所选主题调整特定小部件的样式。"""
         # 清空显性的样式，两个设置按钮 和 菜单选中的按钮
         self.toggle_setting_btn_style()
         self.toggle_selected_btn_style(is_add=False)
 
-        #
+        # 切换主题
         self.config = LightConfig if self.dark_theme else DarkConfig
         self.dark_theme = not self.dark_theme
+        theme_name = "浅色" if self.dark_theme else "深色"
+        
         # 设置全局的新样式，新主题
         with open(self.config.QSS_FILE, mode='r', encoding='utf-8') as f:
             self.styleSheet.setStyleSheet(f.read())
@@ -64,11 +73,19 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         # 设置当前选中的按钮的颜色
         btn: QPushButton = self.findChild(QPushButton, self.current_selected_btn)
-        self.stackedWidget.setCurrentWidget(btn)
         self.toggle_selected_btn_style(btn)
 
         # 添加两个设置按钮的颜色，如果有展开的话
         self.toggle_setting_btn_style(add_default_style=True)
+        
+        # 记录主题切换日志
+        import logging
+        logging.info(f"主题已切换为 {theme_name} 主题")
+
+        # 添加主题切换日志
+        import logging
+        theme_name = "浅色" if self.dark_theme else "深色"
+        logging.info(f"主题切换为: {theme_name}主题")
 
     def initialize_view(self):
         """初始化视图"""
@@ -83,6 +100,243 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.setWindowFlag(Qt.FramelessWindowHint)
         # 半透明
         self.setAttribute(Qt.WA_TranslucentBackground)
+
+    def initialize_new_panels(self):
+        """初始化新面板"""
+        from PySide6.QtWidgets import QVBoxLayout, QHBoxLayout
+        # 添加日志查看器按钮
+        self.btn_logs = QPushButton(self.topMenu)
+        self.btn_logs.setObjectName("btn_logs")
+        sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        sizePolicy.setHeightForWidth(self.btn_logs.sizePolicy().hasHeightForWidth())
+        self.btn_logs.setSizePolicy(sizePolicy)
+        self.btn_logs.setMinimumSize(QSize(0, 45))
+        self.btn_logs.setCursor(QCursor(Qt.PointingHandCursor))
+        self.btn_logs.setLayoutDirection(Qt.LeftToRight)
+        self.btn_logs.setStyleSheet(u"background-image: url(:/icons/icons/cil-notes.png); background-repeat: no-repeat; background-position: left center; padding-left: 30px; text-align: left;")
+        self.btn_logs.setText(QCoreApplication.translate("MainWindow", u"Logs", None))
+        self.verticalLayout_8.addWidget(self.btn_logs)
+
+        # 添加系统监控按钮
+        self.btn_monitor = QPushButton(self.topMenu)
+        self.btn_monitor.setObjectName("btn_monitor")
+        sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        sizePolicy.setHeightForWidth(self.btn_monitor.sizePolicy().hasHeightForWidth())
+        self.btn_monitor.setSizePolicy(sizePolicy)
+        self.btn_monitor.setMinimumSize(QSize(0, 45))
+        self.btn_monitor.setCursor(QCursor(Qt.PointingHandCursor))
+        self.btn_monitor.setLayoutDirection(Qt.LeftToRight)
+        self.btn_monitor.setStyleSheet(u"background-image: url(:/icons/icons/cil-chart.png); background-repeat: no-repeat; background-position: left center; padding-left: 30px; text-align: left;")
+        self.btn_monitor.setText(QCoreApplication.translate("MainWindow", u"Monitor", None))
+        self.verticalLayout_8.addWidget(self.btn_monitor)
+
+        # 添加API测试器按钮
+        self.btn_api = QPushButton(self.topMenu)
+        self.btn_api.setObjectName("btn_api")
+        sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        sizePolicy.setHeightForWidth(self.btn_api.sizePolicy().hasHeightForWidth())
+        self.btn_api.setSizePolicy(sizePolicy)
+        self.btn_api.setMinimumSize(QSize(0, 45))
+        self.btn_api.setCursor(QCursor(Qt.PointingHandCursor))
+        self.btn_api.setLayoutDirection(Qt.LeftToRight)
+        self.btn_api.setStyleSheet(u"background-image: url(:/icons/icons/cil-link.png); background-repeat: no-repeat; background-position: left center; padding-left: 30px; text-align: left;")
+        self.btn_api.setText(QCoreApplication.translate("MainWindow", u"API 测试器", None))
+        self.verticalLayout_8.addWidget(self.btn_api)
+
+        # 添加Markdown编辑器按钮
+        self.btn_markdown = QPushButton(self.topMenu)
+        self.btn_markdown.setObjectName("btn_markdown")
+        sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        sizePolicy.setHeightForWidth(self.btn_markdown.sizePolicy().hasHeightForWidth())
+        self.btn_markdown.setSizePolicy(sizePolicy)
+        self.btn_markdown.setMinimumSize(QSize(0, 45))
+        self.btn_markdown.setCursor(QCursor(Qt.PointingHandCursor))
+        self.btn_markdown.setLayoutDirection(Qt.LeftToRight)
+        self.btn_markdown.setStyleSheet(u"background-image: url(:/icons/icons/cil-notes.png); background-repeat: no-repeat; background-position: left center; padding-left: 30px; text-align: left;")
+        self.btn_markdown.setText(QCoreApplication.translate("MainWindow", u"Markdown 编辑器", None))
+        self.verticalLayout_8.addWidget(self.btn_markdown)
+
+        # 添加S参数查看器按钮
+        self.btn_s_params = QPushButton(self.topMenu)
+        self.btn_s_params.setObjectName("btn_s_params")
+        sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        sizePolicy.setHeightForWidth(self.btn_s_params.sizePolicy().hasHeightForWidth())
+        self.btn_s_params.setSizePolicy(sizePolicy)
+        self.btn_s_params.setMinimumSize(QSize(0, 45))
+        self.btn_s_params.setCursor(QCursor(Qt.PointingHandCursor))
+        self.btn_s_params.setLayoutDirection(Qt.LeftToRight)
+        self.btn_s_params.setStyleSheet(u"background-image: url(:/icons/icons/cil-chart-line.png); background-repeat: no-repeat; background-position: left center; padding-left: 30px; text-align: left;")
+        self.btn_s_params.setText(QCoreApplication.translate("MainWindow", u"S参数查看器", None))
+        self.verticalLayout_8.addWidget(self.btn_s_params)
+
+        # 添加日志查看器页面
+        self.logs_page = QWidget()
+        self.logs_page.setObjectName("logs_page")
+        logs_layout = QVBoxLayout(self.logs_page)
+        logs_layout.setContentsMargins(10, 10, 10, 10)
+        self.text_edit_logs = QTextEdit(self.logs_page)
+        self.text_edit_logs.setStyleSheet("background-color: #1e1e1e; color: #cccccc;")
+        logs_layout.addWidget(self.text_edit_logs)
+        self.stackedWidget.addWidget(self.logs_page)
+
+        # 添加系统监控页面
+        self.monitor_page = QWidget()
+        self.monitor_page.setObjectName("monitor_page")
+        monitor_layout = QVBoxLayout(self.monitor_page)
+        monitor_layout.setContentsMargins(10, 10, 10, 10)
+        self.label_cpu = QLabel(self.monitor_page)
+        self.label_cpu.setStyleSheet("font-size: 16px;")
+        self.label_memory = QLabel(self.monitor_page)
+        self.label_memory.setStyleSheet("font-size: 16px;")
+        monitor_layout.addWidget(self.label_cpu)
+        monitor_layout.addWidget(self.label_memory)
+        monitor_layout.addStretch(1)
+        self.stackedWidget.addWidget(self.monitor_page)
+
+        # 添加API测试器页面
+        self.api_page = QWidget()
+        self.api_page.setObjectName("api_page")
+        
+        # 创建API测试器组件
+        from PySide6.QtWidgets import QLineEdit, QComboBox, QTextBrowser, QGridLayout
+        
+        api_layout = QVBoxLayout(self.api_page)
+        api_layout.setContentsMargins(20, 20, 20, 20)
+        
+        # 创建顶部布局
+        api_top_layout = QHBoxLayout()
+        
+        # URL输入框
+        self.api_url_edit = QLineEdit(self.api_page)
+        self.api_url_edit.setPlaceholderText("输入API URL")
+        api_top_layout.addWidget(self.api_url_edit)
+        
+        # 请求方法选择框
+        self.api_method_combo = QComboBox(self.api_page)
+        self.api_method_combo.addItems(["GET", "POST"])
+        self.api_method_combo.setMaximumWidth(100)
+        api_top_layout.addWidget(self.api_method_combo)
+        
+        # 发送按钮
+        self.api_send_btn = QPushButton(self.api_page)
+        self.api_send_btn.setText("发送")
+        self.api_send_btn.setMaximumWidth(80)
+        self.api_send_btn.clicked.connect(self.send_api_request)
+        api_top_layout.addWidget(self.api_send_btn)
+        
+        api_layout.addLayout(api_top_layout)
+        
+        # 响应显示框
+        self.api_response_browser = QTextBrowser(self.api_page)
+        self.api_response_browser.setStyleSheet("background-color: #1e1e1e; color: #cccccc;")
+        api_layout.addWidget(self.api_response_browser)
+        
+        self.stackedWidget.addWidget(self.api_page)
+
+        # 添加Markdown编辑器页面
+        self.markdown_page = QWidget()
+        self.markdown_page.setObjectName("markdown_page")
+        
+        # 创建Markdown编辑器组件
+        from PySide6.QtWidgets import QVBoxLayout
+        
+        md_layout = QVBoxLayout(self.markdown_page)
+        md_layout.setContentsMargins(10, 10, 10, 10)
+        
+        # 创建分割器
+        self.md_splitter = QSplitter(self.markdown_page)
+        self.md_splitter.setOrientation(Qt.Horizontal)
+        
+        # 创建左侧Markdown输入框
+        self.md_input = QTextEdit(self.md_splitter)
+        self.md_input.setStyleSheet("background-color: #1e1e1e; color: #cccccc;")
+        self.md_input.setPlaceholderText("输入Markdown文本...")
+        
+        # 创建右侧HTML预览框
+        self.md_preview = QTextEdit(self.md_splitter)
+        self.md_preview.setStyleSheet("background-color: #ffffff; color: #000000;")
+        self.md_preview.setReadOnly(True)
+        self.md_preview.setHtml("<h1>Markdown 预览</h1><p>在此查看实时预览</p>")
+        
+        # 设置分割比例
+        self.md_splitter.setSizes([400, 400])
+        
+        md_layout.addWidget(self.md_splitter)
+        
+        # 连接textChanged信号
+        self.md_input.textChanged.connect(self.update_md_preview)
+        
+        self.stackedWidget.addWidget(self.markdown_page)
+
+        # 创建S参数查看器面板
+        from views.widgets.s_parameter_viewer import SParameterViewer
+        self.s_params_page = SParameterViewer(self.stackedWidget)
+        self.stackedWidget.addWidget(self.s_params_page)
+
+        # 添加3D天线方向图按钮
+        self.btn_antenna_3d = QPushButton(self.topMenu)
+        self.btn_antenna_3d.setObjectName("btn_antenna_3d")
+        sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        sizePolicy.setHeightForWidth(self.btn_antenna_3d.sizePolicy().hasHeightForWidth())
+        self.btn_antenna_3d.setSizePolicy(sizePolicy)
+        self.btn_antenna_3d.setMinimumSize(QSize(0, 45))
+        self.btn_antenna_3d.setCursor(QCursor(Qt.PointingHandCursor))
+        self.btn_antenna_3d.setLayoutDirection(Qt.LeftToRight)
+        self.btn_antenna_3d.setStyleSheet(u"background-image: url(:/icons/icons/cil-chart-line.png); background-repeat: no-repeat; background-position: left center; padding-left: 30px; text-align: left;")
+        self.btn_antenna_3d.setText(QCoreApplication.translate("MainWindow", u"3D 天线方向图", None))
+        self.verticalLayout_8.addWidget(self.btn_antenna_3d)
+
+        # 创建3D天线方向图面板
+        from views.widgets.antenna_pattern_3d import AntennaPattern3D
+        self.antenna_3d_page = AntennaPattern3D(self.stackedWidget)
+        self.stackedWidget.addWidget(self.antenna_3d_page)
+
+        # 保存按钮的原始文本
+        self.button_texts = {
+            self.btn_home: self.btn_home.text(),
+            self.btn_widgets: self.btn_widgets.text(),
+            self.btn_new: self.btn_new.text(),
+            self.btn_save: self.btn_save.text(),
+            self.btn_exit: self.btn_exit.text(),
+            self.btn_logs: self.btn_logs.text(),
+            self.btn_monitor: self.btn_monitor.text(),
+            self.btn_api: self.btn_api.text(),
+            self.btn_markdown: self.btn_markdown.text(),
+            self.btn_s_params: self.btn_s_params.text(),
+            self.btn_antenna_3d: self.btn_antenna_3d.text()
+        }
+        # 统一设置所有按钮的样式为左对齐并添加图标间距
+        for button in [self.btn_home, self.btn_widgets, self.btn_new, self.btn_save, self.btn_exit, self.btn_logs, self.btn_monitor, self.btn_api, self.btn_markdown, self.btn_s_params, self.btn_antenna_3d]:
+            # 完整设置按钮样式，确保所有属性一致
+            original_stylesheet = button.styleSheet()
+            # 提取原有的background-image属性
+            if "background-image: " in original_stylesheet:
+                bg_image = original_stylesheet.split("background-image: ")[-1].split(";")[0]
+            else:
+                bg_image = ""
+            # 设置完整样式
+            button.setStyleSheet(u"background-image: " + bg_image + "; background-repeat: no-repeat; background-position: left center; padding-left: 30px; text-align: left;")
+        
+        # 初始状态下隐藏按钮文本（菜单收起时）
+        for button in self.button_texts.keys():
+            button.setText("")
+
+        # 设置日志捕获器
+        import logging
+        # 创建日志捕获器
+        self.log_handler = logging.StreamHandler(self)
+        self.log_handler.setLevel(logging.INFO)
+        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+        self.log_handler.setFormatter(formatter)
+        # 移除所有已存在的处理器
+        for handler in logging.getLogger('').handlers[:]:
+            logging.getLogger('').removeHandler(handler)
+        # 添加我们的日志捕获器
+        logging.getLogger('').addHandler(self.log_handler)
+        # 设置root logger的级别为INFO
+        logging.getLogger('').setLevel(logging.INFO)
+        # 测试日志
+        logging.info("日志查看器已初始化")
 
     def setup_connections(self):
         """事件绑定"""
@@ -101,12 +355,22 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.btn_widgets.clicked.connect(self.switch_page)
         self.btn_new.clicked.connect(self.switch_page)
         self.btn_save.clicked.connect(self.switch_page)
+        self.btn_logs.clicked.connect(self.switch_page)
+        self.btn_monitor.clicked.connect(self.switch_page)
+        self.btn_api.clicked.connect(self.switch_page)
+        self.btn_markdown.clicked.connect(self.switch_page)
+        self.btn_s_params.clicked.connect(self.switch_page)
+        self.btn_antenna_3d.clicked.connect(self.switch_page)
         self.toggleTheme.clicked.connect(self.set_theme)
 
         # 最大最小化点击事件
         self.minimizeAppBtn.clicked.connect(self.showMinimized)
         self.maximizeRestoreAppBtn.clicked.connect(self.maximize_restore)
         self.closeAppBtn.clicked.connect(self.close)
+
+        # 系统监控定时器
+        self.timer.timeout.connect(self.update_system_info)
+        self.timer.start(2000)
 
     def initialize_title(self):
         """设置title"""
@@ -158,13 +422,27 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.is_maximum_size = not self.is_maximum_size
 
     def toggle_menu(self):
-        """切换菜单"""
+        """
+        切换菜单
+        """
         # GET TARGET WIDTH
         target_width = self.config.MENU_WIDTH if self.leftMenuBg.width() == 60 else 60
+
+        # 隐藏或显示按钮文本
+        hide_text = target_width == 60  # 如果目标宽度是60（收起状态），则隐藏文本
+
+        # 立即更新文本，避免动画过程中文字显示异常
+        for button, text in self.button_texts.items():
+            button.setText("" if hide_text else text)
 
         # ANIMATION
         self.animation = create_width_animation(self.leftMenuBg, target_width)
         self.animation.start()
+
+    def update_button_text(self, hide_text):
+        """更新按钮文本可见性"""
+        for button, text in self.button_texts.items():
+            button.setText("" if hide_text else text)
 
     # noinspection PyTypeChecker
     def toggle_selected_btn_style(self, widget=None, is_add=True):
@@ -257,19 +535,28 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.animation_group.start()
 
     def switch_page(self):
-        """切换页面"""
+        """
+        切换页面
+        """
         page_map = {
-            'btn_home': self.home,
-            'btn_widgets': self.widgets,
-            'btn_new': self.new_page,
+            'btn_home': 0,
+            'btn_widgets': 1,
+            'btn_new': 2,
+            'btn_logs': 3,
+            'btn_monitor': 4,
+            'btn_api': 5,
+            'btn_markdown': 6,
+            'btn_s_params': 7,
+            'btn_antenna_3d': 8,
         }
         selected_btn = self.sender()
         selected_btn_name: str = selected_btn.objectName()
-        if page := page_map.get(selected_btn_name):
-            if page == self.stackedWidget.currentWidget():
+        if selected_btn_name in page_map:
+            index = page_map[selected_btn_name]
+            if index == self.stackedWidget.currentIndex():
                 return
             # 切换页面
-            QTimer.singleShot(150, lambda: self.stackedWidget.setCurrentWidget(page))
+            QTimer.singleShot(150, lambda: self.stackedWidget.setCurrentIndex(index))
             # 设置未被选中按钮样式
             self.toggle_selected_btn_style(is_add=False)
             # 设置选中的按钮样式
@@ -277,6 +564,74 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             # 记录当前选中的按钮
             self.current_selected_btn = selected_btn_name
         print(f'Button "{selected_btn_name}" pressed!')
+
+    def update_system_info(self):
+        """更新系统信息"""
+        import psutil
+        cpu_percent = psutil.cpu_percent()
+        memory = psutil.virtual_memory()
+        memory_percent = memory.percent
+        self.label_cpu.setText(f"CPU 使用率: {cpu_percent}%")
+        self.label_memory.setText(f"内存 使用率: {memory_percent}%")
+
+    def emit(self, record):
+        """日志捕获器的emit方法"""
+        log_entry = self.log_handler.formatter.format(record)
+        self.text_edit_logs.append(log_entry)
+
+    def write(self, message):
+        """日志捕获器的write方法"""
+        if message.strip():
+            self.text_edit_logs.append(message.strip())
+
+    def flush(self):
+        """日志捕获器的flush方法"""
+        pass
+    
+    def update_md_preview(self):
+        """更新Markdown预览"""
+        md_text = self.md_input.toPlainText()
+        if markdown is not None:
+            html_text = markdown(md_text)
+        else:
+            html_text = f"<h1>Markdown 未安装</h1><p>请安装markdown库以使用此功能：<br>pip install markdown</p>"
+        self.md_preview.setHtml(html_text)
+    
+    def send_api_request(self):
+        """发送API请求并显示响应"""
+        url = self.api_url_edit.text()
+        method = self.api_method_combo.currentText()
+        
+        if not url:
+            self.api_response_browser.setText("请输入API URL")
+            return
+        
+        try:
+            import sys
+            sys.path.append('lib')
+            import requests
+            import json
+            
+            if method == "GET":
+                response = requests.get(url)
+            else:
+                response = requests.post(url)
+            
+            response.raise_for_status()  # 检查请求是否成功
+            
+            # 解析JSON响应
+            data = response.json()
+            
+            # 格式化显示
+            formatted_json = json.dumps(data, indent=4, ensure_ascii=False)
+            self.api_response_browser.setText(formatted_json)
+            
+        except requests.exceptions.RequestException as e:
+            self.api_response_browser.setText(f"请求错误: {str(e)}")
+        except json.JSONDecodeError:
+            self.api_response_browser.setText(f"JSON解析错误: 响应不是有效的JSON格式")
+        except Exception as e:
+            self.api_response_browser.setText(f"其他错误: {str(e)}")
 
     def double_click_maximize_restore(self, event):
         """双击标题控件事件"""
