@@ -5,6 +5,7 @@
 # Description:
 
 import sys
+import math
 from typing import (Tuple, Union)
 
 from PySide6.QtCore import (Qt, QTimer, QEvent, QPoint, QRect, QPropertyAnimation, QParallelAnimationGroup, QCoreApplication, QSize)
@@ -169,19 +170,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.btn_s_params.setText(QCoreApplication.translate("MainWindow", u"S参数查看器", None))
         self.verticalLayout_8.addWidget(self.btn_s_params)
 
-        # 添加史密斯圆图按钮
-        self.btn_smith_chart = QPushButton(self.topMenu)
-        self.btn_smith_chart.setObjectName("btn_smith_chart")
-        sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-        sizePolicy.setHeightForWidth(self.btn_smith_chart.sizePolicy().hasHeightForWidth())
-        self.btn_smith_chart.setSizePolicy(sizePolicy)
-        self.btn_smith_chart.setMinimumSize(QSize(0, 45))
-        self.btn_smith_chart.setCursor(QCursor(Qt.PointingHandCursor))
-        self.btn_smith_chart.setLayoutDirection(Qt.LeftToRight)
-        self.btn_smith_chart.setStyleSheet(u"background-image: url(:/icons/icons/cil-chart-pie.png); background-repeat: no-repeat; background-position: left center; padding-left: 30px; text-align: left;")
-        self.btn_smith_chart.setText(QCoreApplication.translate("MainWindow", u"史密斯圆图", None))
-        self.verticalLayout_8.addWidget(self.btn_smith_chart)
-
         # 添加日志查看器页面
         self.logs_page = QWidget()
         self.logs_page.setObjectName("logs_page")
@@ -286,10 +274,78 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.s_params_page = SParameterViewer(self.stackedWidget)
         self.stackedWidget.addWidget(self.s_params_page)
 
-        # 创建史密斯圆图面板
-        from views.widgets.smith_chart import SmithChartViewer
-        self.smith_chart_page = SmithChartViewer(self.stackedWidget)
-        self.stackedWidget.addWidget(self.smith_chart_page)
+        # 添加微带线阻抗计算器按钮
+        self.btn_microstrip = QPushButton(self.topMenu)
+        self.btn_microstrip.setObjectName("btn_microstrip")
+        sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        sizePolicy.setHeightForWidth(self.btn_microstrip.sizePolicy().hasHeightForWidth())
+        self.btn_microstrip.setSizePolicy(sizePolicy)
+        self.btn_microstrip.setMinimumSize(QSize(0, 45))
+        self.btn_microstrip.setCursor(QCursor(Qt.PointingHandCursor))
+        self.btn_microstrip.setLayoutDirection(Qt.LeftToRight)
+        self.btn_microstrip.setStyleSheet(u"background-image: url(:/icons/icons/cil-magnifying-glass.png); background-repeat: no-repeat; background-position: left center; padding-left: 30px; text-align: left;")
+        self.btn_microstrip.setText(QCoreApplication.translate("MainWindow", u"微带线阻抗计算器", None))
+        self.verticalLayout_8.addWidget(self.btn_microstrip)
+
+        # 添加微带线阻抗计算器页面
+        self.microstrip_page = QWidget()
+        self.microstrip_page.setObjectName("microstrip_page")
+        microstrip_layout = QVBoxLayout(self.microstrip_page)
+        microstrip_layout.setContentsMargins(20, 20, 20, 20)
+
+        # 创建输入框布局
+        from PySide6.QtWidgets import QGridLayout
+        input_layout = QGridLayout()
+
+        # 介电常数输入
+        self.label_er = QLabel("介电常数 (Er):", self.microstrip_page)
+        self.input_er = QLineEdit(self.microstrip_page)
+        self.input_er.setPlaceholderText("输入介电常数，例如: 4.4")
+        input_layout.addWidget(self.label_er, 0, 0)
+        input_layout.addWidget(self.input_er, 0, 1)
+
+        # 基板高度输入
+        self.label_h = QLabel("基板高度 (H, mm):", self.microstrip_page)
+        self.input_h = QLineEdit(self.microstrip_page)
+        self.input_h.setPlaceholderText("输入基板高度，例如: 1.6")
+        input_layout.addWidget(self.label_h, 1, 0)
+        input_layout.addWidget(self.input_h, 1, 1)
+
+        # 导线宽度输入
+        self.label_w = QLabel("导线宽度 (W, mm):", self.microstrip_page)
+        self.input_w = QLineEdit(self.microstrip_page)
+        self.input_w.setPlaceholderText("输入导线宽度，例如: 1.0")
+        input_layout.addWidget(self.label_w, 2, 0)
+        input_layout.addWidget(self.input_w, 2, 1)
+
+        # 导线厚度输入
+        self.label_t = QLabel("导线厚度 (T, mm):", self.microstrip_page)
+        self.input_t = QLineEdit(self.microstrip_page)
+        self.input_t.setPlaceholderText("输入导线厚度，例如: 0.035")
+        input_layout.addWidget(self.label_t, 3, 0)
+        input_layout.addWidget(self.input_t, 3, 1)
+
+        microstrip_layout.addLayout(input_layout)
+
+        # 特性阻抗显示
+        self.label_z0 = QLabel("特性阻抗 (Z0):", self.microstrip_page)
+        self.label_z0.setStyleSheet("font-size: 18px; font-weight: bold;")
+        self.label_z0_result = QLabel("0.0 Ω", self.microstrip_page)
+        self.label_z0_result.setStyleSheet("font-size: 24px; color: #00bfff;")
+
+        result_layout = QHBoxLayout()
+        result_layout.addWidget(self.label_z0)
+        result_layout.addWidget(self.label_z0_result)
+        result_layout.addStretch(1)
+        microstrip_layout.addLayout(result_layout)
+
+        # 连接textChanged信号
+        self.input_er.textChanged.connect(self.calculate_microstrip_impedance)
+        self.input_h.textChanged.connect(self.calculate_microstrip_impedance)
+        self.input_w.textChanged.connect(self.calculate_microstrip_impedance)
+        self.input_t.textChanged.connect(self.calculate_microstrip_impedance)
+
+        self.stackedWidget.addWidget(self.microstrip_page)
 
         # 保存按钮的原始文本
         self.button_texts = {
@@ -303,10 +359,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.btn_api: self.btn_api.text(),
             self.btn_markdown: self.btn_markdown.text(),
             self.btn_s_params: self.btn_s_params.text(),
-            self.btn_smith_chart: self.btn_smith_chart.text()
+            self.btn_microstrip: self.btn_microstrip.text()
         }
         # 统一设置所有按钮的样式为左对齐并添加图标间距
-        for button in [self.btn_home, self.btn_widgets, self.btn_new, self.btn_save, self.btn_exit, self.btn_logs, self.btn_monitor, self.btn_api, self.btn_markdown, self.btn_s_params, self.btn_smith_chart]:
+        for button in [self.btn_home, self.btn_widgets, self.btn_new, self.btn_save, self.btn_exit, self.btn_logs, self.btn_monitor, self.btn_api, self.btn_markdown, self.btn_s_params, self.btn_microstrip]:
             # 完整设置按钮样式，确保所有属性一致
             original_stylesheet = button.styleSheet()
             # 提取原有的background-image属性
@@ -360,7 +416,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.btn_api.clicked.connect(self.switch_page)
         self.btn_markdown.clicked.connect(self.switch_page)
         self.btn_s_params.clicked.connect(self.switch_page)
-        self.btn_smith_chart.clicked.connect(self.switch_page)
+        self.btn_microstrip.clicked.connect(self.switch_page)
         self.toggleTheme.clicked.connect(self.set_theme)
 
         # 最大最小化点击事件
@@ -547,7 +603,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             'btn_api': 5,
             'btn_markdown': 6,
             'btn_s_params': 7,
-            'btn_smith_chart': 8,
+            'btn_microstrip': 8,
         }
         selected_btn = self.sender()
         selected_btn_name: str = selected_btn.objectName()
@@ -566,13 +622,78 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         print(f'Button "{selected_btn_name}" pressed!')
 
     def update_system_info(self):
-        """更新系统信息"""
-        import psutil
-        cpu_percent = psutil.cpu_percent()
-        memory = psutil.virtual_memory()
-        memory_percent = memory.percent
-        self.label_cpu.setText(f"CPU 使用率: {cpu_percent}%")
-        self.label_memory.setText(f"内存 使用率: {memory_percent}%")
+        """更新系统监控信息"""
+        try:
+            import psutil
+            # 获取CPU使用率
+            cpu_percent = psutil.cpu_percent(interval=0.1)
+            # 获取内存使用情况
+            memory = psutil.virtual_memory()
+            memory_percent = memory.percent
+            memory_used = round(memory.used / (1024 ** 3), 2)  # GB
+            memory_total = round(memory.total / (1024 ** 3), 2)  # GB
+            
+            # 更新标签
+            self.label_cpu.setText(f"CPU 使用率: {cpu_percent}%")
+            self.label_memory.setText(f"内存 使用率: {memory_percent}% ({memory_used} / {memory_total} GB)")
+        except ImportError:
+            self.label_cpu.setText("CPU 使用率: 无法获取")
+            self.label_memory.setText("内存 使用率: 无法获取")
+        except Exception as e:
+            self.label_cpu.setText(f"CPU 使用率: 错误")
+            self.label_memory.setText(f"内存 使用率: 错误")
+
+    def calculate_microstrip_impedance(self):
+        """计算微带线特性阻抗"""
+        try:
+            # 获取输入值
+            er = float(self.input_er.text().strip())
+            h = float(self.input_h.text().strip())
+            w = float(self.input_w.text().strip())
+            t = float(self.input_t.text().strip())
+        except ValueError:
+            # 如果输入无效，设置为0
+            self.label_z0_result.setText("0.0 Ω")
+            return
+
+        try:
+            # 使用Wheeler公式计算微带线阻抗
+            # 首先计算有效介电常数和特性阻抗
+            w_h = w / h
+            t_h = t / h
+
+            # 计算有效介电常数
+            if w_h <= 1:
+                e_eff = (er + 1) / 2 + (er - 1) / 2 * ((1 + 12 * h / w) ** (-0.5) + 0.04 * (1 - w / h) ** 2)
+            else:
+                e_eff = (er + 1) / 2 + (er - 1) / 2 * (1 + 12 * h / w) ** (-0.5)
+
+            # 计算特性阻抗
+            if w_h <= 1:
+                z0 = (60 / (e_eff ** 0.5)) * math.log(8 * h / w + w / (4 * h))
+            else:
+                z0 = (120 * 3.14159265359 / (e_eff ** 0.5)) / (w_h + 1.393 + 0.667 * math.log(w_h + 1.444))
+
+            # 考虑导体厚度的修正
+            delta_w_h = (t / h) / 2 * (1 + math.log(2 * 3.14159265359 * h / t) / (2 * 3.14159265359))
+            w_eff_h = w_h + delta_w_h
+
+            # 重新计算有效介电常数
+            if w_eff_h <= 1:
+                e_eff_corrected = (er + 1) / 2 + (er - 1) / 2 * ((1 + 12 * h / w_eff_h) ** (-0.5) + 0.04 * (1 - w_eff_h) ** 2)
+            else:
+                e_eff_corrected = (er + 1) / 2 + (er - 1) / 2 * (1 + 12 * h / w_eff_h) ** (-0.5)
+
+            # 重新计算特性阻抗
+            if w_eff_h <= 1:
+                z0_corrected = (60 / (e_eff_corrected ** 0.5)) * math.log(8 * h / w_eff_h + w_eff_h / 4)
+            else:
+                z0_corrected = (120 * 3.14159265359 / (e_eff_corrected ** 0.5)) / (w_eff_h + 1.393 + 0.667 * math.log(w_eff_h + 1.444))
+
+            # 显示结果
+            self.label_z0_result.setText(f"{z0_corrected:.2f} Ω")
+        except Exception as e:
+            self.label_z0_result.setText("计算错误")
 
     def emit(self, record):
         """日志捕获器的emit方法"""
