@@ -273,23 +273,23 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.s_params_page = SParameterViewer(self.stackedWidget)
         self.stackedWidget.addWidget(self.s_params_page)
 
-        # 添加RF链路预算按钮
-        self.btn_rf_budget = QPushButton(self.topMenu)
-        self.btn_rf_budget.setObjectName("btn_rf_budget")
+        # 添加3D天线方向图按钮
+        self.btn_antenna_3d = QPushButton(self.topMenu)
+        self.btn_antenna_3d.setObjectName("btn_antenna_3d")
         sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-        sizePolicy.setHeightForWidth(self.btn_rf_budget.sizePolicy().hasHeightForWidth())
-        self.btn_rf_budget.setSizePolicy(sizePolicy)
-        self.btn_rf_budget.setMinimumSize(QSize(0, 45))
-        self.btn_rf_budget.setCursor(QCursor(Qt.PointingHandCursor))
-        self.btn_rf_budget.setLayoutDirection(Qt.LeftToRight)
-        self.btn_rf_budget.setStyleSheet(u"background-image: url(:/icons/icons/cil-chart-line.png); background-repeat: no-repeat; background-position: left center; padding-left: 30px; text-align: left;")
-        self.btn_rf_budget.setText(QCoreApplication.translate("MainWindow", u"RF 链路预算", None))
-        self.verticalLayout_8.addWidget(self.btn_rf_budget)
+        sizePolicy.setHeightForWidth(self.btn_antenna_3d.sizePolicy().hasHeightForWidth())
+        self.btn_antenna_3d.setSizePolicy(sizePolicy)
+        self.btn_antenna_3d.setMinimumSize(QSize(0, 45))
+        self.btn_antenna_3d.setCursor(QCursor(Qt.PointingHandCursor))
+        self.btn_antenna_3d.setLayoutDirection(Qt.LeftToRight)
+        self.btn_antenna_3d.setStyleSheet(u"background-image: url(:/icons/icons/cil-chart-line.png); background-repeat: no-repeat; background-position: left center; padding-left: 30px; text-align: left;")
+        self.btn_antenna_3d.setText(QCoreApplication.translate("MainWindow", u"3D 天线方向图", None))
+        self.verticalLayout_8.addWidget(self.btn_antenna_3d)
 
-        # 创建RF链路预算面板
-        from views.widgets.rf_link_budget import RFLinkBudget
-        self.rf_budget_page = RFLinkBudget(self.stackedWidget)
-        self.stackedWidget.addWidget(self.rf_budget_page)
+        # 创建3D天线方向图面板
+        from views.widgets.antenna_pattern_3d import AntennaPattern3D
+        self.antenna_3d_page = AntennaPattern3D(self.stackedWidget)
+        self.stackedWidget.addWidget(self.antenna_3d_page)
 
         # 保存按钮的原始文本
         self.button_texts = {
@@ -303,15 +303,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.btn_api: self.btn_api.text(),
             self.btn_markdown: self.btn_markdown.text(),
             self.btn_s_params: self.btn_s_params.text(),
-            self.btn_rf_budget: self.btn_rf_budget.text()
+            self.btn_antenna_3d: self.btn_antenna_3d.text()
         }
         # 统一设置所有按钮的样式为左对齐并添加图标间距
-        for button in [self.btn_home, self.btn_widgets, self.btn_new, self.btn_save, self.btn_exit, self.btn_logs, self.btn_monitor, self.btn_api, self.btn_markdown, self.btn_s_params, self.btn_rf_budget]:
+        for button in [self.btn_home, self.btn_widgets, self.btn_new, self.btn_save, self.btn_exit, self.btn_logs, self.btn_monitor, self.btn_api, self.btn_markdown, self.btn_s_params, self.btn_antenna_3d]:
             # 完整设置按钮样式，确保所有属性一致
             original_stylesheet = button.styleSheet()
             # 提取原有的background-image属性
             if "background-image: " in original_stylesheet:
-                bg_image = original_stylesheet.split("background-image: ")[-1].split("; ")[0]
+                bg_image = original_stylesheet.split("background-image: ")[-1].split(";")[0]
             else:
                 bg_image = ""
             # 设置完整样式
@@ -360,7 +360,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.btn_api.clicked.connect(self.switch_page)
         self.btn_markdown.clicked.connect(self.switch_page)
         self.btn_s_params.clicked.connect(self.switch_page)
-        self.btn_rf_budget.clicked.connect(self.switch_page)
+        self.btn_antenna_3d.clicked.connect(self.switch_page)
         self.toggleTheme.clicked.connect(self.set_theme)
 
         # 最大最小化点击事件
@@ -547,7 +547,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             'btn_api': 5,
             'btn_markdown': 6,
             'btn_s_params': 7,
-            'btn_rf_budget': 8,
+            'btn_antenna_3d': 8,
         }
         selected_btn = self.sender()
         selected_btn_name: str = selected_btn.objectName()
