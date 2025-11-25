@@ -15,6 +15,7 @@ from config import (DarkConfig, LightConfig)
 from views.ui_components import (create_width_animation, create_animation_group, apply_shadow_effect)
 from views.ui_designs import Ui_MainWindow
 from views.widgets import CustomGrip
+from views.widgets.smith_chart_panel import SmithChartPanel
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
@@ -38,6 +39,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.config = DarkConfig
         #
         self.initialize_view()
+        self.setup_smith_chart_panel()
         self.setup_connections()
 
     # noinspection PyTypeChecker
@@ -84,6 +86,27 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # 半透明
         self.setAttribute(Qt.WA_TranslucentBackground)
 
+    def setup_smith_chart_panel(self):
+        """设置史密斯圆图面板"""
+        # 创建史密斯圆图面板
+        self.smith_chart_panel = SmithChartPanel()
+        # 添加到stackedWidget
+        self.stackedWidget.addWidget(self.smith_chart_panel)
+        # 在左侧菜单添加按钮
+        self.btn_smith_chart = QPushButton(self.topMenu)
+        self.btn_smith_chart.setObjectName(u"btn_smith_chart")
+        sizePolicy = self.btn_home.sizePolicy()
+        sizePolicy.setHeightForWidth(self.btn_smith_chart.sizePolicy().hasHeightForWidth())
+        self.btn_smith_chart.setSizePolicy(sizePolicy)
+        self.btn_smith_chart.setMinimumSize(self.btn_home.minimumSize())
+        self.btn_smith_chart.setFont(self.btn_home.font())
+        self.btn_smith_chart.setCursor(self.btn_home.cursor())
+        self.btn_smith_chart.setLayoutDirection(self.btn_home.layoutDirection())
+        self.btn_smith_chart.setStyleSheet(u"background-image: url(:/icons/icons/cil-chart.png);")
+        self.btn_smith_chart.setText("史密斯圆图")
+        # 获取verticalLayout_8并添加按钮
+        self.topMenu.layout().addWidget(self.btn_smith_chart)
+
     def setup_connections(self):
         """事件绑定"""
         # 标题栏事件
@@ -100,7 +123,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.btn_home.clicked.connect(self.switch_page)
         self.btn_widgets.clicked.connect(self.switch_page)
         self.btn_new.clicked.connect(self.switch_page)
-        self.btn_save.clicked.connect(self.switch_page)
+        self.btn_smith_chart.clicked.connect(self.switch_page)
+        self.toggleTheme.clicked.connect(self.set_theme)
         self.toggleTheme.clicked.connect(self.set_theme)
 
         # 最大最小化点击事件
@@ -262,6 +286,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             'btn_home': self.home,
             'btn_widgets': self.widgets,
             'btn_new': self.new_page,
+            'btn_smith_chart': self.smith_chart_panel
         }
         selected_btn = self.sender()
         selected_btn_name: str = selected_btn.objectName()
