@@ -15,6 +15,7 @@ from config import (DarkConfig, LightConfig)
 from views.ui_components import (create_width_animation, create_animation_group, apply_shadow_effect)
 from views.ui_designs import Ui_MainWindow
 from views.widgets import CustomGrip
+from views.widgets.microstrip_analyzer import MicrostripAnalyzer
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
@@ -83,6 +84,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.setWindowFlag(Qt.FramelessWindowHint)
         # 半透明
         self.setAttribute(Qt.WA_TranslucentBackground)
+        # 添加微带线分析页面
+        self.microstrip_analyzer = MicrostripAnalyzer()
+        self.stackedWidget.addWidget(self.microstrip_analyzer)
 
     def setup_connections(self):
         """事件绑定"""
@@ -101,6 +105,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.btn_widgets.clicked.connect(self.switch_page)
         self.btn_new.clicked.connect(self.switch_page)
         self.btn_save.clicked.connect(self.switch_page)
+        # 添加微带线分析按钮
+        self.btn_microstrip = QPushButton("微带线分析")
+        self.btn_microstrip.setObjectName("btn_microstrip")
+        self.btn_microstrip.setIcon(QIcon(u":/icons/icons/icon_microstrip.png"))
+        self.btn_microstrip.clicked.connect(self.switch_page)
+        self.topMenu.layout().addWidget(self.btn_microstrip)
         self.toggleTheme.clicked.connect(self.set_theme)
 
         # 最大最小化点击事件
@@ -262,6 +272,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             'btn_home': self.home,
             'btn_widgets': self.widgets,
             'btn_new': self.new_page,
+            'btn_microstrip': self.microstrip_analyzer,
         }
         selected_btn = self.sender()
         selected_btn_name: str = selected_btn.objectName()
